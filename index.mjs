@@ -20,6 +20,40 @@ inquirer
       default: "theme-name",
     },
     {
+      name: "author",
+      message: "请输入主题作者",
+      validate: (i) => {
+        if (i != "") {
+          return true;
+        } else {
+          return false;
+        }
+      },
+    },
+    {
+      name: "repoURL",
+      message: "请输入主题仓库URL",
+      validate: (i) => {
+        if (i == "") {
+          return false;
+        }
+        try {
+          // tslint:disable-next-line: no-unused-expression
+          new URL(i);
+        } catch (err) {
+          return "\nURL无效\n";
+        }
+        let res = "\n";
+        if (!i.startsWith("https://github.com/")) res += "https://github.com/ 开头是必要的\n";
+        if (i.endsWith(".git")) res += "不能是以 .git 结尾\n";
+        if (res != "\n") {
+          return res;
+        } else {
+          return true;
+        }
+      },
+    },
+    {
       name: "template",
       type: "rawlist",
       message: "请选择主题模板",
@@ -51,10 +85,26 @@ inquirer
             const param = {
               name: answers.name,
               description: answers.description,
+              author: answers.author,
+              repoURL: answers.repoURL,
             };
             const result = template(param);
             fs.writeFileSync(packagePath, result);
-            console.log(chalk.green("主题初始化成功！"));
+            console.log(chalk.green("package.json初始化成功！"));
+          }
+          const themeJsonPath = path.join(downloadPath, "theme.json");
+          if (fs.existsSync(themeJsonPath)) {
+            const content = fs.readFileSync(themeJsonPath).toString();
+            // handlebars 模板处理引擎
+            const template = handlebars.compile(content);
+            const param = {
+              name: answers.name,
+              author: answers.author,
+              repoURL: answers.repoURL,
+            };
+            const result = template(param);
+            fs.writeFileSync(themeJsonPath, result);
+            console.log(chalk.green("theme.json初始化成功！"));
           }
         }
       }
